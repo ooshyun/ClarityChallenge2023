@@ -1,0 +1,43 @@
+[build-system]
+requires = [
+  "setuptools >= 40.9.0",
+  "wheel",
+  "versioneer"
+  ]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "--cov clarity"
+testpaths = [
+    "tests",
+]
+filterwarnings = [
+    "ignore::UserWarning"
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py37']
+exclude = '''
+
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.venv
+  )/
+)
+'''
+
+[tool.mypy]
+ignore_missing_imports = true
+exclude = [
+    "docs/*",
+    "build/*"
+    ]
+
+[tool.coverage.run]
+omit = [
+    "clarity/_version.py"
+]
