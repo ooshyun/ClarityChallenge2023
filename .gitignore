@@ -1,3 +1,5 @@
 mllib/
 result/
-enhancded_signals/
+enhanced_signals/
+amplified_signals/
+*.csv
