@@ -94,7 +94,6 @@ def make_scene_listener_list(scenes_listeners, small_test=False):
 # @hydra.main(config_path=".", config_name="config")
 def run_calculate_si(cfg: DictConfig) -> None:
     """Evaluate the enhanced signals using a combination of HASPI and HASQI metrics"""
-
     # Load listener data
     with open(cfg.path.scenes_listeners_file, "r", encoding="utf-8") as fp:
         scenes_listeners = json.load(fp)
@@ -118,6 +117,7 @@ def run_calculate_si(cfg: DictConfig) -> None:
 
     results_file = ResultsFile("scores.csv")
     results_file.write_header()
+
 
     for scene, listener in tqdm(scene_listener_pairs):
         logger.info(f"Running evaluation: scene {scene}, listener {listener}")

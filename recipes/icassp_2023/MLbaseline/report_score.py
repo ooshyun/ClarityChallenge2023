@@ -4,13 +4,13 @@ import logging
 
 import hydra
 import pandas as pd
-from evaluate import make_scene_listener_list
+from .evaluate import make_scene_listener_list
 from omegaconf import DictConfig
 
 logger = logging.getLogger(__name__)
 
 
-@hydra.main(config_path=".", config_name="config")
+# @hydra.main(config_path=".", config_name="config")
 def report_score(cfg: DictConfig) -> None:
     """Run the dummy enhancement."""
 
