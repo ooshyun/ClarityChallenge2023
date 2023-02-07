@@ -7,7 +7,7 @@ import copy
 import hydra
 import numpy as np
 from .evaluate import make_scene_listener_list
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 from scipy.io import wavfile
 from tqdm import tqdm
 
@@ -16,12 +16,13 @@ logger = logging.getLogger(__name__)
 import torch
 import julius
 from mllib.src.evaluate import evaluate
+from mllib.src.loss import PermutationInvariantTraining
 from mllib.src.utils import load_yaml
-from mllib.src.distrib import get_model
+from mllib.src.distrib import get_model, get_loss_function
 from mllib.src.solver import Solver
 
 # @hydra.main(config_path=".", config_name="config")
-def enhance(cfg: DictConfig) -> None:
+def enhance(cfg: DictConfig, model_path) -> None:
     """Run the dummy enhancement."""
     enhanced_folder = pathlib.Path("enhanced_signals")
     enhanced_folder.mkdir(parents=True, exist_ok=True)
@@ -38,8 +39,8 @@ def enhance(cfg: DictConfig) -> None:
     )
 
     # Load ML model
-    model_path = "/home/daniel0413/workplace/project/SpeechEnhancement/SpeechEnhancementHL/result/dcunet/20230128-234556"
     config = load_yaml(model_path + "/config.yaml")
+    loss_function = get_loss_function(config.optim)
     model = get_model(config.model)
     config.solver.resume = model_path
     # config.solver.preloaded_model = model_path + " " # specific model path
@@ -75,16 +76,47 @@ def enhance(cfg: DictConfig) -> None:
         length = signal.shape[-1]
         signal = torch.from_numpy(signal)
         
+        
         if config.dset.sample_rate != sample_freq:
             signal = julius.resample.resample_frac(signal, sample_freq, config.dset.sample_rate)
-        
+
+        if config.optim.pit:
+            sample_freq_target, signal_target = wavfile.read(
+                pathlib.Path(cfg.path.scenes_folder) / f"{scene}_target_CH1.wav"
+            )
+            sample_freq_interferer, signal_interferer = wavfile.read(
+                pathlib.Path(cfg.path.scenes_folder) / f"{scene}_interferer_CH1.wav"
+            )
+            signal_target = (signal_target / 32768.0).astype(np.float32)
+            signal_interferer = (signal_interferer / 32768.0).astype(np.float32)
+
+            signal_target = np.transpose(signal_target, axes=[1, 0])
+            signal_target = torch.from_numpy(signal_target)
+            signal_interferer = np.transpose(signal_interferer, axes=[1, 0])
+            signal_interferer = torch.from_numpy(signal_interferer)
+            
+            if config.dset.sample_rate != sample_freq_target:
+                signal_target = julius.resample.resample_frac(signal_target, sample_freq, config.dset.sample_rate)
+            if config.dset.sample_rate != sample_freq_interferer:
+                signal_interferer = julius.resample.resample_frac(signal_interferer, sample_freq, config.dset.sample_rate)
+
+
         nchannel, nsample = signal.shape
-        signal = torch.reshape(signal, shape=(nchannel, 1, nsample))
         
-        signal = evaluate(mixture=signal, 
+        if not config.optim.pit:
+            signal = torch.reshape(signal, shape=(nchannel, 1, nsample))
+        
+        enhanced = evaluate(mixture=signal[None], 
                         model=pretrained_model, 
                         device=device, 
                         config=config)
+        if config.optim.pit:
+            index_enhanced, _ = PermutationInvariantTraining(enhance=enhanced, 
+                                                                    target=[signal_target[None], signal_interferer[None]],
+                                                                    loss_function=loss_function)
+            signal = enhanced[:, index_enhanced, ...]
+        else:
+            signal = enhanced
 
         signal = torch.reshape(signal, shape=(nchannel, nsample))
         
