@@ -19,6 +19,11 @@ from mllib.src.evaluate import evaluate
 from mllib.src.utils import load_yaml
 from mllib.src.distrib import get_model
 from mllib.src.solver import Solver
+from mllib.src.model.types import (MULTI_SPEECH_SEPERATION_MODELS,
+                MULTI_CHANNEL_SEPERATION_MODELS,
+                MONARCH_SPEECH_SEPARTAION_MODELS, 
+                STFT_MODELS,
+                WAV_MODELS,)
 
 # @hydra.main(config_path=".", config_name="config")
 def enhance(cfg: DictConfig, model_path) -> None:
@@ -79,19 +84,23 @@ def enhance(cfg: DictConfig, model_path) -> None:
             signal = julius.resample.resample_frac(signal, sample_freq, config.dset.sample_rate)
 
         nchannel, nsample = signal.shape
-        
-        if not config.optim.pit:
-            signal = torch.reshape(signal, shape=(nchannel, 1, nsample))
-        
+
+        # mono channel to stereo for source separation models
+        assert config.model.audio_channels == nchannel, f"Channel between {config.dset.name} and {config.model.name} did not match..."
+
+        # if not source separation models, merge batch and channels
+        if config.model.name in MONARCH_SPEECH_SEPARTAION_MODELS:
+            mixture = torch.reshape(mixture, shape=(nchannel, 1, nsample))
+                
         enhanced = evaluate(mixture=signal[None], 
                         model=pretrained_model, 
                         device=device, 
                         config=config)
-        if config.optim.pit:
-            index_enhanced = 0 # evaluated by training dataset
-            signal = enhanced[:, index_enhanced, ...]
-        else:
-            signal = enhanced
+        enhanced = torch.squeeze(enhanced, dim=0)
+
+        enhanced = enhanced.detach().cpu()
+        if config.model.name in MULTI_SPEECH_SEPERATION_MODELS:
+            enhanced = enhanced[:, 0, ...]
 
         signal = torch.reshape(signal, shape=(nchannel, nsample))
         
