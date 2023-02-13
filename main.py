@@ -14,11 +14,11 @@ if __name__=="__main__":
 
     # 2. Inference model
     # samples only including target's period, PIT
-    model_path = "/home/daniel0413/workplace/project/SpeechEnhancement/SpeechEnhancementHL-Clarity/result/conv-tasnet/20230207-184607"
+    model_path = "./result/conv-tasnet/20230207-184607"
     # # including all samples, PIT
-    # model_path = "/home/daniel0413/workplace/project/SpeechEnhancement/SpeechEnhancementHL-Clarity/result/conv-tasnet/20230207-185011"
+    # model_path = "./result/conv-tasnet/20230207-185011"
     # # including all samples and no PIT
-    # model_path = "/home/daniel0413/workplace/project/SpeechEnhancement/SpeechEnhancementHL-Clarity/result/conv-tasnet/20230208-175200"
+    # model_path = "./result/conv-tasnet/20230208-175200"
 
     name="_"+model_path.split("/")[-1]
 
