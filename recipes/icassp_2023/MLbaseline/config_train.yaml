@@ -1,9 +1,9 @@
 path:
   root: # [TODO] set clairty challenge dataset path
   metadata_dir: ${path.root}/clarity_data/metadata
-  scenes_listeners_file: ${path.metadata_dir}/scenes_listeners.dev.json
+  scenes_listeners_file:
   listeners_file: ${path.metadata_dir}/listeners.json
-  scenes_folder: ${path.root}/clarity_data/dev/scenes
+  scenes_folder: ${path.root}/clarity_data/train/scenes
   exp_folder: ./exp # folder to store enhanced signals and final results
 
 

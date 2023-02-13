@@ -92,9 +92,8 @@ def make_scene_listener_list(scenes_listeners, small_test=False):
 
 
 # @hydra.main(config_path=".", config_name="config")
-def run_calculate_si(cfg: DictConfig) -> None:
+def run_calculate_si(cfg: DictConfig, name="") -> None:
     """Evaluate the enhanced signals using a combination of HASPI and HASQI metrics"""
-
     # Load listener data
     with open(cfg.path.scenes_listeners_file, "r", encoding="utf-8") as fp:
         scenes_listeners = json.load(fp)
@@ -105,8 +104,8 @@ def run_calculate_si(cfg: DictConfig) -> None:
     enhancer = NALR(**cfg.nalr)
     compressor = Compressor(**cfg.compressor)
 
-    enhanced_folder = pathlib.Path("enhanced_signals")
-    amplified_folder = pathlib.Path("amplified_signals")
+    enhanced_folder = pathlib.Path(f"./data/result/enhanced_signals{name}")
+    amplified_folder = pathlib.Path(f"./data/result/amplified_signals{name}")
     scenes_folder = pathlib.Path(cfg.path.scenes_folder)
     amplified_folder.mkdir(parents=True, exist_ok=True)
 
@@ -116,8 +115,9 @@ def run_calculate_si(cfg: DictConfig) -> None:
         scenes_listeners, cfg.evaluate.small_test
     )
 
-    results_file = ResultsFile("scores.csv")
+    results_file = ResultsFile(f"./data/result/scores{name}.csv")
     results_file.write_header()
+
 
     for scene, listener in tqdm(scene_listener_pairs):
         logger.info(f"Running evaluation: scene {scene}, listener {listener}")
@@ -171,6 +171,63 @@ def run_calculate_si(cfg: DictConfig) -> None:
             scene, listener, score=score, haspi=haspi_score, hasqi=hasqi_score
         )
 
+def get_amplified_signal(enhance_signal, fs_signal, scene, cfg: DictConfig, audiogram=None):
+    """Evaluate the enhanced signals using a combination of HASPI and HASQI metrics"""
+    # Load listener data
+    with open(cfg.path.scenes_listeners_file, "r", encoding="utf-8") as fp:
+        scenes_listeners = json.load(fp)
+
+    with open(cfg.path.listeners_file, "r", encoding="utf-8") as fp:
+        listener_audiograms = json.load(fp)
+
+    enhancer = NALR(**cfg.nalr)
+    compressor = Compressor(**cfg.compressor)
+
+    scenes_folder = pathlib.Path(cfg.path.scenes_folder)
+
+    # Make list of all scene listener pairs that will be run
+    listener_list = [listener for listener in scenes_listeners[scene]]
+    
+    listener = listener_list[0]
+
+    print(f"\tRunning evaluation: scene {scene}, listener {listener}")
+
+    if cfg.evaluate.set_random_seed:
+        set_scene_seed(scene)
+
+    # Read signals
+    fs_ref_anechoic, ref_anechoic = wavfile.read(
+        scenes_folder / f"{scene}_target_anechoic_CH1.wav"
+    )
+    fs_ref_target, ref_target = wavfile.read(
+        scenes_folder / f"{scene}_target_CH1.wav"
+    )
+    ref_anechoic = ref_anechoic / 32768.0
+    ref_target = ref_target / 32768.0
+
+    assert fs_ref_anechoic == fs_ref_target == cfg.nalr.fs
+
+    # amplify left and right ear signals
+    if audiogram is None:
+        audiogram = listener_audiograms[listener]
+
+    out_l = amplify_signal(enhance_signal[0, ...], audiogram, "l", enhancer, compressor)
+    out_r = amplify_signal(enhance_signal[1, ...], audiogram, "r", enhancer, compressor)
+    amplified = np.stack([out_l, out_r], axis=1)
+
+    if cfg.soft_clip:
+        amplified = np.tanh(amplified)
+
+    # Evaluate the amplified signal
+
+    rms_target = np.mean(ref_target**2, axis=0) ** 0.5
+    rms_anechoic = np.mean(ref_anechoic**2, axis=0) ** 0.5
+    ref = ref_anechoic * rms_target / rms_anechoic
+
+    haspi_score = compute_metric(haspi_v2_be, amplified, ref, audiogram, fs_signal)
+    hasqi_score = compute_metric(hasqi_v2_be, amplified, ref, audiogram, fs_signal)
+
+    return amplified, ref, haspi_score, hasqi_score, audiogram
 
 if __name__ == "__main__":
     run_calculate_si()  # noqa
