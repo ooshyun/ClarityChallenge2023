@@ -1,5 +1,5 @@
 path:
-  root: /home/olive-samba/sambashare/data/Sound/clarity_ICASSP2023/clarity_CEC2_icassp2023_eval
+  root: # [TODO] set path to evaluation dataset for clarity challenge
   metadata_dir: ${path.root}/clarity_data/metadata
   listeners_file: ${path.metadata_dir}/listeners.eval.json
   # evaluation sets

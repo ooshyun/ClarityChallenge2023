@@ -92,7 +92,7 @@ def make_scene_listener_list(scenes_listeners, small_test=False):
 
 
 # @hydra.main(config_path=".", config_name="config")
-def run_calculate_si(cfg: DictConfig) -> None:
+def run_calculate_si(cfg: DictConfig, name="") -> None:
     """Evaluate the enhanced signals using a combination of HASPI and HASQI metrics"""
     # Load listener data
     with open(cfg.path.scenes_listeners_file, "r", encoding="utf-8") as fp:
@@ -104,8 +104,8 @@ def run_calculate_si(cfg: DictConfig) -> None:
     enhancer = NALR(**cfg.nalr)
     compressor = Compressor(**cfg.compressor)
 
-    enhanced_folder = pathlib.Path("enhanced_signals")
-    amplified_folder = pathlib.Path("amplified_signals")
+    enhanced_folder = pathlib.Path(f"./data/result/enhanced_signals{name}")
+    amplified_folder = pathlib.Path(f"./data/result/amplified_signals{name}")
     scenes_folder = pathlib.Path(cfg.path.scenes_folder)
     amplified_folder.mkdir(parents=True, exist_ok=True)
 
@@ -115,7 +115,7 @@ def run_calculate_si(cfg: DictConfig) -> None:
         scenes_listeners, cfg.evaluate.small_test
     )
 
-    results_file = ResultsFile("scores.csv")
+    results_file = ResultsFile(f"./data/result/scores{name}.csv")
     results_file.write_header()
 
 

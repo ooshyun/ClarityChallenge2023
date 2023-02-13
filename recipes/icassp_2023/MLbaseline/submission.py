@@ -19,10 +19,15 @@ from mllib.src.evaluate import evaluate
 from mllib.src.utils import load_yaml
 from mllib.src.distrib import get_model
 from mllib.src.solver import Solver
+from mllib.src.model.types import (MULTI_SPEECH_SEPERATION_MODELS,
+                MULTI_CHANNEL_SEPERATION_MODELS,
+                MONARCH_SPEECH_SEPARTAION_MODELS, 
+                STFT_MODELS,
+                WAV_MODELS,)
 
 # @hydra.main(config_path=".", config_name="config")
-def make_submission_clarity_challenge(cfg: DictConfig, model_path) -> None:
-    submission_folder = pathlib.Path("./ICASSP_E009")
+def make_submission_clarity_challenge(cfg: DictConfig, model_path, name="") -> None:
+    submission_folder = pathlib.Path(f"./ICASSP_E009{name}")
     submission_folder.mkdir(parents=True, exist_ok=True)
 
     scenes_listeners_file_list = OmegaConf.to_object(cfg.path.scenes_listeners_file)
@@ -77,19 +82,21 @@ def make_submission_clarity_challenge(cfg: DictConfig, model_path) -> None:
 
             nchannel, nsample = signal.shape
             
-            if not config.optim.pit:
-                signal = torch.reshape(signal, shape=(nchannel, 1, nsample))
-            
+            # if not source separation models, merge batch and channels
+            if config.model.name in MONARCH_SPEECH_SEPARTAION_MODELS:
+                mixture = torch.reshape(mixture, shape=(nchannel, 1, nsample))
+
             enhanced = evaluate(mixture=signal[None], 
                             model=pretrained_model, 
                             device=device, 
                             config=config)
-            if config.optim.pit:
-                index_enhanced = 0 # evaluated by training dataset
-                signal = enhanced[:, index_enhanced, ...]
-            else:
-                signal = enhanced
+            enhanced = torch.squeeze(enhanced, dim=0)
+            enhanced = enhanced.detach().cpu()
+            
+            if config.model.name in MULTI_SPEECH_SEPERATION_MODELS:
+                enhanced = enhanced[0, ...] # num_spk, num_channel, num_samples
 
+            signal = enhanced
             signal = torch.reshape(signal, shape=(nchannel, nsample))
             
             if config.dset.sample_rate != sample_freq:

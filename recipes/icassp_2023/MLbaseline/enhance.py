@@ -26,9 +26,9 @@ from mllib.src.model.types import (MULTI_SPEECH_SEPERATION_MODELS,
                 WAV_MODELS,)
 
 # @hydra.main(config_path=".", config_name="config")
-def enhance(cfg: DictConfig, model_path) -> None:
+def enhance(cfg: DictConfig, model_path, name="") -> None:
     """Run the dummy enhancement."""
-    enhanced_folder = pathlib.Path("enhanced_signals")
+    enhanced_folder = pathlib.Path(f"./data/result/enhanced_signals{name}")
     enhanced_folder.mkdir(parents=True, exist_ok=True)
 
     with open(cfg.path.scenes_listeners_file, "r", encoding="utf-8") as fp:
@@ -99,9 +99,11 @@ def enhance(cfg: DictConfig, model_path) -> None:
         enhanced = torch.squeeze(enhanced, dim=0)
 
         enhanced = enhanced.detach().cpu()
-        if config.model.name in MULTI_SPEECH_SEPERATION_MODELS:
-            enhanced = enhanced[:, 0, ...]
 
+        if config.model.name in MULTI_SPEECH_SEPERATION_MODELS:
+            enhanced = enhanced[0, ...] # num_spk, num_channel, num_samples
+
+        signal = enhanced
         signal = torch.reshape(signal, shape=(nchannel, nsample))
         
         if config.dset.sample_rate != sample_freq:

@@ -11,13 +11,13 @@ logger = logging.getLogger(__name__)
 
 
 # @hydra.main(config_path=".", config_name="config")
-def report_score(cfg: DictConfig) -> None:
+def report_score(cfg: DictConfig, name="") -> None:
     """Run the dummy enhancement."""
 
     with open(cfg.path.scenes_listeners_file, "r", encoding="utf-8") as fp:
         scenes_listeners = json.load(fp)
 
-    results_df = pd.read_csv("scores.csv")
+    results_df = pd.read_csv(f"./data/result/scores{name}.csv")
 
     # Make list of all scene listener pairs that are expected in results file
     scene_listener_pairs = make_scene_listener_list(
