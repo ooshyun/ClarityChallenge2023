@@ -84,7 +84,7 @@ def evaluate_clarity(scene, enhanced, sample_rate, cfg):
     
     if enhanced.shape[0] != reference.shape[0]:
         # Usually the difference is 1 sample
-        warnings.warn(f"Scene {scene}: {enhanced.shape}, {reference.shape}, shape is different...")
+        # warnings.warn(f"Scene {scene}: {enhanced.shape}, {reference.shape}, shape is different...")
         if enhanced.shape[0] > reference.shape[0]:
             enhanced = enhanced[:reference.shape[0], ...]
         elif enhanced.shape[0] < reference.shape[0]:
@@ -92,13 +92,13 @@ def evaluate_clarity(scene, enhanced, sample_rate, cfg):
 
     assert fs_ref == sample_rate, f'{sample_rate}, {fs_ref}, Sample rate is different...'
 
+    # currently only choose only 1 listeners, dev give 3 listeners
     amplified_scene_list = get_amplified_signal(enhanced, sample_rate=sample_rate, cfg=cfg)
 
-    score = np.zeros(shape=(2, len(amplified_scene_list)), dtype=np.float32)
+    score = np.zeros(shape=(len(amplified_scene_list), 2), dtype=np.float32)
     for icase, amplified_scene in enumerate(amplified_scene_list):
-        hasqi = compute_hasqi(amplified_scene['amplified'], reference, amplified_scene['audiogram'], sample_rate=sample_rate)
+        hasqi = compute_haspi(amplified_scene['amplified'], reference, amplified_scene['audiogram'], sample_rate=sample_rate)
         haspi = compute_hasqi(amplified_scene['amplified'], reference, amplified_scene['audiogram'], sample_rate=sample_rate)
-        score[:, icase] = hasqi, haspi
-        
+        score[icase] = hasqi, haspi
     return score
 
