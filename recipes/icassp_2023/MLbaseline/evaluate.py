@@ -50,7 +50,6 @@ def compute_metric(metric, signal, ref, audiogram, fs_signal):
     )
     return score
 
-
 class ResultsFile:
     """Class to write results to a CSV file"""
 
@@ -171,7 +170,7 @@ def run_calculate_si(cfg: DictConfig, name="") -> None:
             scene, listener, score=score, haspi=haspi_score, hasqi=hasqi_score
         )
 
-def get_amplified_signal(enhance_signal, fs_signal, scene, cfg: DictConfig, audiogram=None):
+def get_amplified_signal(enhance_signal, fs_signal, scene, cfg: DictConfig, audiogram=None, return_target=False):
     """Evaluate the enhanced signals using a combination of HASPI and HASQI metrics"""
     # Load listener data
     with open(cfg.path.scenes_listeners_file, "r", encoding="utf-8") as fp:
@@ -188,7 +187,7 @@ def get_amplified_signal(enhance_signal, fs_signal, scene, cfg: DictConfig, audi
     # Make list of all scene listener pairs that will be run
     listener_list = [listener for listener in scenes_listeners[scene]]
     
-    listener = listener_list[0]
+    listener = listener_list[0] # currently only choose only 1 listener
 
     print(f"\tRunning evaluation: scene {scene}, listener {listener}")
 
@@ -227,7 +226,10 @@ def get_amplified_signal(enhance_signal, fs_signal, scene, cfg: DictConfig, audi
     haspi_score = compute_metric(haspi_v2_be, amplified, ref, audiogram, fs_signal)
     hasqi_score = compute_metric(hasqi_v2_be, amplified, ref, audiogram, fs_signal)
 
-    return amplified, ref, haspi_score, hasqi_score, audiogram
+    if not return_target:
+        return amplified, ref, haspi_score, hasqi_score, audiogram
+    else:
+        return amplified, ref, haspi_score, hasqi_score, audiogram, ref_target, ref_anechoic
 
 if __name__ == "__main__":
     run_calculate_si()  # noqa
