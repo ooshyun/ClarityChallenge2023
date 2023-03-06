@@ -4,6 +4,8 @@
   <img src="docs/images/cadenza_logo.png" alt="Cadenza Challenge" width="250" hspace="30"/>
 </p>
 
+*This repository is from v0.2.0 in https://github.com/claritychallenge/clarity.git, and add speech enhancement model
+
 We are organising a series of machine learning challenges to enhance hearing-aid signal processing and to better predict
 how people perceive speech-in-noise (Clarity) and speech-in-music (Cadenza). For further details of the Clarity Project
 visit [the Clarity project website](http://claritychallenge.org/), and for details of our latest Clarity challenges
