@@ -77,7 +77,9 @@ class ClarityEnhancerSanityCheck(unittest.TestCase):
 
         enhancer_torch = NALRTorch(**cfg.nalr)
         compressor_torch = CompressorTorch(**cfg.compressor) 
-
+        
+        print(audiogram)
+        
         cfs = np.array(audiogram["audiogram_cfs"])
         audiogram = np.array([audiogram[f"audiogram_levels_l"], 
                             audiogram[f"audiogram_levels_r"]])

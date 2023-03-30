@@ -1,0 +1,7 @@
+*
+!model/
+!img/
+!audio/
+!tensorboard/
+!.gitignore
+!*.md
