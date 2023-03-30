@@ -119,8 +119,9 @@ The details of results can show in [./tensorboard](./tensorboard), and it prepar
     ![-](./result/img/S03488_target_CH1_20230221-231507_Spectogram.png)
 
 - (20230221-231507) Audio, S03488_target_CH1
-    [TODO]
-
+    - [clean audio](./result/audio/S03488_target_CH1_sources.wav)
+    - [noisy audio](./result/audio/S03488_target_CH1_mixture.wav)
+    - [denoised audio](./result/audio/S03488_target_CH1_enhanced.wav)
     
 ## 4. Concepts in Clarity Challenge
 ### 4.1 Amplification
